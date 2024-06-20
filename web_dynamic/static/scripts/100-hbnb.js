@@ -1,113 +1,113 @@
-window.addEventListener('load', function () {
-  // task 3
-  $.ajax('http://0.0.0.0:5001/api/v1/status').done(function (data) {
-    if (data.status === 'OK') {
-      $('#api_status').addClass('available');
+$('document').ready(function () {
+  const api = 'http://' + window.location.hostname;
+
+  $.get(api + ':5001:/api/v1/status/', function (response) {
+    if (response.status === 'OK') {
+      $('DIV#api_status').addClass('available');
     } else {
-      $('#api_status').removeClass('available');
+      $('DIV#api_status').removeClass('available');
     }
   });
 
-  // task 2
-  const amenityIds = {};
-  $('.amenities input[type=checkbox]').click(function () {
-    if ($(this).prop('checked')) {
-      amenityIds[$(this).attr('data-id')] = $(this).attr('data-name');
-    } else if (!$(this).prop('checked')) {
-      delete amenityIds[$(this).attr('data-id')];
-    }
-    if (Object.keys(amenityIds).length === 0) {
-      $('div.amenities h4').html('&nbsp;');
+  $.ajax({
+    url: api + ':5001/api/v1/places_search/',
+    type: 'POST',
+    data: '{}',
+    contentType: 'application/json',
+    dataType: 'json',
+    success: appendPlaces
+  });
+
+  let states = {};
+  $('.locations > UL > H2 > INPUT[type="checkbox"]').change(function () {
+    if ($(this).is(':checked')) {
+      states[$(this).attr('data-id')] = $(this).attr('data-name');
     } else {
-      $('div.amenities h4').text(Object.values(amenityIds).join(', '));
+      delete states[$(this).attr('data-id')];
+    }
+    const locations = Object.assign({}, states, cities);
+    if (Object.values(locations).length === 0) {
+      $('.locations H4').html('&nbsp;');
+    } else {
+      $('.locations H4').text(Object.values(locations).join(', '));
     }
   });
 
-  const stateIds = {};
-  const cityIds = {};
-  // task 4
-  $('.filters button').click(function () {
+  let cities = {};
+  $('.locations > UL > UL > LI INPUT[type="checkbox"]').change(function () {
+    if ($(this).is(':checked')) {
+      cities[$(this).attr('data-id')] = $(this).attr('data-name');
+    } else {
+      delete cities[$(this).attr('data-id')];
+    }
+    const locations = Object.assign({}, states, cities);
+    if (Object.values(locations).length === 0) {
+      $('.locations H4').html('&nbsp;');
+    } else {
+      $('.locations H4').text(Object.values(locations).join(', '));
+    }
+  });
+
+  let amenities = {};
+  $('.amenities INPUT[type="checkbox"]').change(function () {
+    if ($(this).is(':checked')) {
+      amenities[$(this).attr('data-id')] = $(this).attr('data-name');
+    } else {
+      delete amenities[$(this).attr('data-id')];
+    }
+    if (Object.values(amenities).length === 0) {
+      $('.amenities H4').html('&nbsp;');
+    } else {
+      $('.amenities H4').text(Object.values(amenities).join(', '));
+    }
+  });
+
+  $('BUTTON').click(function () {
     $.ajax({
+      url: api + ':5001/api/v1/places_search/',
       type: 'POST',
-      url: 'http://0.0.0.0:5001/api/v1/places_search/',
-      contentType: 'application/json',
       data: JSON.stringify({
-        amenities: Object.keys(amenityIds),
-        states: Object.keys(stateIds),
-        cities: Object.keys(cityIds)
-      })
-    }).done(function (data) {
-      $('section.places').empty();
-      $('section.places').append('<h1>Places</h1>');
-      for (const place of data) {
-        const template = `<article>
-        <div class="title">
-        <h2>${place.name}</h2>
-        <div class="price_by_night">
-      $${place.price_by_night}
-      </div>
-        </div>
-        <div class="information">
-        <div class="max_guest">
-        <i class="fa fa-users fa-3x" aria-hidden="true"></i>
-
-        <br />
-
-      ${place.max_guest} Guests
-
-      </div>
-        <div class="number_rooms">
-        <i class="fa fa-bed fa-3x" aria-hidden="true"></i>
-
-        <br />
-
-      ${place.number_rooms} Bedrooms
-      </div>
-        <div class="number_bathrooms">
-        <i class="fa fa-bath fa-3x" aria-hidden="true"></i>
-
-        <br />
-
-      ${place.number_bathrooms} Bathroom
-
-      </div>
-        </div>
-        <div class="description">
-
-      ${place.description}
-
-      </div>
-
-      </article> <!-- End 1 PLACE Article -->`;
-        $('section.places').append(template);
-      }
+        'states': Object.keys(states),
+        'cities': Object.keys(cities),
+        'amenities': Object.keys(amenities)
+      }),
+      contentType: 'application/json',
+      dataType: 'json',
+      success: appendPlaces
     });
   });
-
-  // task 6
-  $('.stateCheckBox').click(function () {
-    if ($(this).prop('checked')) {
-      stateIds[$(this).attr('data-id')] = $(this).attr('data-name');
-    } else if (!$(this).prop('checked')) {
-      delete stateIds[$(this).attr('data-id')];
-    }
-    if (Object.keys(stateIds).length === 0 && Object.keys(cityIds).length === 0) {
-      $('.locations h4').html('&nbsp;');
-    } else {
-      $('.locations h4').text(Object.values(stateIds).concat(Object.values(cityIds)).join(', '));
-    }
-  });
-
-  $('.cityCheckBox').click(function () {
-    if ($(this).prop('checked')) {
-      cityIds[$(this).attr('data-id')] = $(this).attr('data-name');
-    } else if (!$(this).prop('checked')) {
-      delete cityIds[$(this).attr('data-id')];
-    }
-    if (Object.keys(stateIds).length === 0 && Object.keys(cityIds).length === 0) {
-      $('.locations h4').html('&nbsp;');
-    } else {
-      $('.locations h4').text(Object.values(cityIds).concat(Object.values(stateIds)).join(', '));
-    }
-  });
 });
+
+function appendPlaces (data) {
+  $('SECTION.places').empty();
+  $('SECTION.places').append(data.map(place => {
+    return `<ARTICLE>
+              <DIV class="title">
+                <H2>${place.name}</H2>
+                  <DIV class="price_by_night">
+                    ${place.price_by_night}
+                  </DIV>
+                </DIV>
+                <DIV class="information">
+                  <DIV class="max_guest">
+                    <I class="fa fa-users fa-3x" aria-hidden="true"></I>
+                    </BR>
+                    ${place.max_guest} Guests
+                  </DIV>
+                  <DIV class="number_rooms">
+                    <I class="fa fa-bed fa-3x" aria-hidden="true"></I>
+                    </BR>
+                    ${place.number_rooms} Bedrooms
+                  </DIV>
+                  <DIV class="number_bathrooms">
+                    <I class="fa fa-bath fa-3x" aria-hidden="true"></I>
+                    </BR>
+                    ${place.number_bathrooms} Bathrooms
+                  </DIV>
+                </DIV>
+                <DIV class="description">
+                  ${place.description}
+                </DIV>
+              </ARTICLE>`;
+  }));
+}
